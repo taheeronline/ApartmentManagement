@@ -1,0 +1,32 @@
+﻿@page "/flats/{ApartmentId:int}"
+@inject ApartmentManagement.Application.Interfaces.iFlatRepository FlatRepository
+
+<h3>Flats</h3>
+
+@if (flats == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <ul>
+        @foreach (var flat in flats)
+        {
+            <li>
+                Flat @flat.FlatNumber (Floor @flat.Floor)
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter]
+    public int ApartmentId { get; set; }
+
+    private IReadOnlyList<ApartmentManagement.Domain.Entities.Flat>? flats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        flats = await FlatRepository.GetByApartmentIdAsync(ApartmentId);
+    }
+}

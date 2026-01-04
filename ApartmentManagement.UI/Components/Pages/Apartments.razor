@@ -1,0 +1,62 @@
+﻿@page "/apartments"
+@inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
+
+<h3>Apartments</h3>
+
+@if (apartments == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h4>Add Apartment</h4>
+
+    <div class="mb-3">
+        <input class="form-control" placeholder="Name" @bind="name" />
+    </div>
+    <div class="mb-3">
+        <input class="form-control" placeholder="Address" @bind="address" />
+    </div>
+    <button class="btn btn-primary" @onclick="AddApartment">Add</button>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Flats</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var apartment in apartments)
+            {
+                <tr>
+                    <td>@apartment.Name</td>
+                    <td>@apartment.Address</td>
+                    <td>@apartment.Flats.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<ApartmentManagement.Domain.Entities.Apartment>? apartments;
+    private string name = string.Empty;
+    private string address = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        apartments = await ApartmentService.GetApartmentsAsync();
+    }
+
+    private async Task AddApartment()
+    {
+        await ApartmentService.AddApartmentAsync(name, address);
+        apartments = await ApartmentService.GetApartmentsAsync();
+
+        name = string.Empty;
+        address = string.Empty;
+    }
+}
+
