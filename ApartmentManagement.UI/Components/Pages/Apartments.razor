@@ -33,7 +33,11 @@ else
                 <tr>
                     <td>@apartment.Name</td>
                     <td>@apartment.Address</td>
-                    <td>@apartment.Flats.Count</td>
+                    <td>
+                        <NavLink href="@($"/flats/{apartment.Id}")">
+                            View Flats (@apartment.Flats.Count)
+                        </NavLink>
+                    </td>
                 </tr>
             }
         </tbody>

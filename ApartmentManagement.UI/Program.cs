@@ -17,6 +17,7 @@ builder.Services.AddScoped<iApartmentRepository, ApartmentRepository>();
 builder.Services.AddScoped<iFlatRepository, FlatRepository>();
 
 builder.Services.AddScoped<ApartmentService>();
+builder.Services.AddScoped<FlatService>();
 
 var app = builder.Build();
 

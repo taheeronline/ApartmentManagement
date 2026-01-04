@@ -1,22 +1,47 @@
 ﻿@page "/flats/{ApartmentId:int}"
-@inject ApartmentManagement.Application.Interfaces.iFlatRepository FlatRepository
+@inject ApartmentManagement.Application.Services.FlatService FlatService
 
 <h3>Flats</h3>
+
+<h4>Add Flat</h4>
+
+<div class="mb-3">
+    <input class="form-control" placeholder="Flat Number" @bind="flatNumber" />
+</div>
+
+<div class="mb-3">
+    <input class="form-control" placeholder="Floor" type="number" @bind="floor" />
+</div>
+
+<button class="btn btn-primary mb-4" @onclick="AddFlat">Add Flat</button>
 
 @if (flats == null)
 {
     <p>Loading...</p>
 }
+else if (!flats.Any())
+{
+    <p>No flats found.</p>
+}
 else
 {
-    <ul>
-        @foreach (var flat in flats)
-        {
-            <li>
-                Flat @flat.FlatNumber (Floor @flat.Floor)
-            </li>
-        }
-    </ul>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Flat Number</th>
+                <th>Floor</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var flat in flats)
+            {
+                <tr>
+                    <td>@flat.FlatNumber</td>
+                    <td>@flat.Floor</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -25,8 +50,25 @@ else
 
     private IReadOnlyList<ApartmentManagement.Domain.Entities.Flat>? flats;
 
+    private string flatNumber = string.Empty;
+    private int floor;
+
     protected override async Task OnInitializedAsync()
     {
-        flats = await FlatRepository.GetByApartmentIdAsync(ApartmentId);
+        await LoadFlats();
+    }
+
+    private async Task AddFlat()
+    {
+        await FlatService.AddFlatAsync(flatNumber, floor, ApartmentId);
+        flatNumber = string.Empty;
+        floor = 0;
+
+        await LoadFlats();
+    }
+
+    private async Task LoadFlats()
+    {
+        flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
     }
 }
