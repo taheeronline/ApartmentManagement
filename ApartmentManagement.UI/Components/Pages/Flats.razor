@@ -1,20 +1,56 @@
 ﻿@page "/flats/{ApartmentId:int}"
+@using ApartmentManagement.Application.DTOs
 @inject ApartmentManagement.Application.Services.FlatService FlatService
 
-<h3>Flats</h3>
+<h3>List of Flats</h3>
 
-<h4>Add Flat</h4>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body bg-light">
+                    <h4 class="card-title mb-4 text-center">
+                        Add Flat
+                    </h4>
 
-<div class="mb-3">
-    <input class="form-control" placeholder="Flat Number" @bind="flatNumber" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Flat Number
+                        </label>
+                        <input class="form-control"
+                               placeholder="e.g. A-101"
+                               @bind="flatNumber" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Floor
+                        </label>
+                        <input class="form-control"
+                               type="number"
+                               placeholder="e.g. 1"
+                               @bind="floor" />
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary"
+                                @onclick="AddFlat">
+                            Add Flat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="mb-3">
-    <input class="form-control" placeholder="Floor" type="number" @bind="floor" />
-</div>
 
-<button class="btn btn-primary mb-4" @onclick="AddFlat">Add Flat</button>
-
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
 @if (flats == null)
 {
     <p>Loading...</p>
@@ -25,11 +61,12 @@ else if (!flats.Any())
 }
 else
 {
-    <table class="table">
-        <thead>
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
             <tr>
                 <th>Flat Number</th>
                 <th>Floor</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -38,17 +75,24 @@ else
                 <tr>
                     <td>@flat.FlatNumber</td>
                     <td>@flat.Floor</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => DeleteFlat(flat.Id)">
+                            Delete
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
+
 }
 
 @code {
     [Parameter]
     public int ApartmentId { get; set; }
 
-    private IReadOnlyList<ApartmentManagement.Domain.Entities.Flat>? flats;
+    private IReadOnlyList<FlatDto>? flats;
 
     private string flatNumber = string.Empty;
     private int floor;
@@ -67,8 +111,26 @@ else
         await LoadFlats();
     }
 
+    private string? errorMessage;
+
     private async Task LoadFlats()
     {
-        flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
+        try
+        {
+            errorMessage = null;
+            flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
+
+
+    private async Task DeleteFlat(int id)
+    {
+        await FlatService.DeleteFlatAsync(id);
+        await LoadFlats();
+    }
+
 }

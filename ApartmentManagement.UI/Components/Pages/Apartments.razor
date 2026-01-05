@@ -1,7 +1,8 @@
 ﻿@page "/apartments"
+@using ApartmentManagement.Application.DTOs
 @inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
 
-<h3>Apartments</h3>
+<h3>List of Apartments</h3>
 
 @if (apartments == null)
 {
@@ -9,18 +10,48 @@
 }
 else
 {
-    <h4>Add Apartment</h4>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body bg-light">
+                        <h4 class="card-title mb-4 text-center">
+                            Add Apartment
+                        </h4>
 
-    <div class="mb-3">
-        <input class="form-control" placeholder="Name" @bind="name" />
-    </div>
-    <div class="mb-3">
-        <input class="form-control" placeholder="Address" @bind="address" />
-    </div>
-    <button class="btn btn-primary" @onclick="AddApartment">Add</button>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                Name
+                            </label>
+                            <input class="form-control"
+                                   placeholder="e.g. Green View Residency"
+                                   @bind="name" />
+                        </div>
 
-    <table class="table">
-        <thead>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                Address
+                            </label>
+                            <input class="form-control"
+                                   placeholder="Street, Area, City"
+                                   @bind="address" />
+                        </div>
+
+                        <div class="d-grid">
+                            <button class="btn btn-primary"
+                                    @onclick="AddApartment">
+                                Add Apartment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <table class="table table-striped">
+        <thead class="table-dark">
             <tr>
                 <th>Name</th>
                 <th>Address</th>
@@ -35,17 +66,18 @@ else
                     <td>@apartment.Address</td>
                     <td>
                         <NavLink href="@($"/flats/{apartment.Id}")">
-                            View Flats (@apartment.Flats.Count)
+                            View Flats (@apartment.FlatCount)
                         </NavLink>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+
 }
 
 @code {
-    private IReadOnlyList<ApartmentManagement.Domain.Entities.Apartment>? apartments;
+    private IReadOnlyList<ApartmentDto>? apartments;
     private string name = string.Empty;
     private string address = string.Empty;
 

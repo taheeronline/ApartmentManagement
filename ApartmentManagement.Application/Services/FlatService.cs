@@ -1,10 +1,6 @@
-﻿using ApartmentManagement.Application.Interfaces;
+﻿using ApartmentManagement.Application.DTOs;
+using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ApartmentManagement.Application.Services
 {
@@ -17,15 +13,35 @@ namespace ApartmentManagement.Application.Services
             _flatRepository = flatRepository;
         }
 
-        public Task<IReadOnlyList<Flat>> GetFlatsByApartmentAsync(int apartmentId)
+        public async Task<IReadOnlyList<FlatDto>> GetFlatsByApartmentAsync(int apartmentId)
         {
-            return _flatRepository.GetByApartmentIdAsync(apartmentId);
+            var flats = await _flatRepository.GetByApartmentIdAsync(apartmentId);
+
+            return flats.Select(f => new FlatDto
+            {
+                Id = f.Id,
+                FlatNumber = f.FlatNumber,
+                Floor = f.Floor
+            }).ToList();
         }
 
-        public Task AddFlatAsync(string flatNumber, int floor, int apartmentId)
+
+        public async Task AddFlatAsync(string flatNumber, int floor, int apartmentId)
         {
+            if (await _flatRepository.ExistsAsync(apartmentId, flatNumber))
+            {
+                throw new InvalidOperationException(
+                    $"Flat {flatNumber} already exists in this apartment.");
+            }
+
             var flat = new Flat(flatNumber, floor, apartmentId);
-            return _flatRepository.AddAsync(flat);
+            await _flatRepository.AddAsync(flat);
         }
+
+        public async Task DeleteFlatAsync(int id)
+        {
+            await _flatRepository.DeleteAsync(id);
+        }
+
     }
 }

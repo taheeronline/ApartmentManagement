@@ -1,4 +1,5 @@
-﻿using ApartmentManagement.Application.Interfaces;
+﻿using ApartmentManagement.Application.DTOs;
+using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
 
 namespace ApartmentManagement.Application.Services
@@ -12,10 +13,19 @@ namespace ApartmentManagement.Application.Services
             _apartmentRepository = apartmentRepository;
         }
 
-        public Task<IReadOnlyList<Apartment>> GetApartmentsAsync()
+        public async Task<IReadOnlyList<ApartmentDto>> GetApartmentsAsync()
         {
-            return _apartmentRepository.GetAllAsync();
+            var apartments = await _apartmentRepository.GetAllAsync();
+
+            return apartments.Select(a => new ApartmentDto
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Address = a.Address,
+                FlatCount = a.Flats.Count
+            }).ToList();
         }
+
 
         public Task AddApartmentAsync(string name, string address)
         {

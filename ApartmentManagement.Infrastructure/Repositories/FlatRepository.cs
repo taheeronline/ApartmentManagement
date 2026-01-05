@@ -34,5 +34,30 @@ namespace ApartmentManagement.Infrastructure.Repositories
                 .Where(f => f.ApartmentId == apartmentId)
                 .ToListAsync();
         }
+
+        public async Task<bool> ExistsAsync(int apartmentId, string flatNumber)
+        {
+            return await _context.Flats
+                .AnyAsync(f =>
+                    f.ApartmentId == apartmentId &&
+                    f.FlatNumber == flatNumber);
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var flat = await _context.Flats.FindAsync(id);
+            if (flat == null) return;
+
+            _context.Flats.Remove(flat);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Flat flat)
+        {
+            _context.Flats.Update(flat);
+            await _context.SaveChangesAsync();
+        }
+
+
     }
 }
