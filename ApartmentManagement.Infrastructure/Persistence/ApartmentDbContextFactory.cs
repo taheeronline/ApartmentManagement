@@ -11,7 +11,9 @@ namespace ApartmentManagement.Infrastructure.Persistence
             var optionsBuilder = new DbContextOptionsBuilder<ApartmentDbContext>();
 
             optionsBuilder.UseSqlServer(
-                "Server=IE-0024\\SQLEXPRESS;Database=ApartmentManagementDb;Trusted_Connection=True;TrustServerCertificate=True");
+                "Server=.\\SQLEXPRESS;Database=ApartmentManagementDb;Trusted_Connection=True;TrustServerCertificate=True");
+
+            //optionsBuilder.UseSqlServer("Server=.;Database=ApartmentManagementDb;Trusted_Connection=True;TrustServerCertificate=True");
 
             return new ApartmentDbContext(optionsBuilder.Options);
         }
