@@ -1,10 +1,5 @@
 ﻿using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ApartmentManagement.Application.Services
 {
@@ -19,8 +14,11 @@ namespace ApartmentManagement.Application.Services
             iResidentRepository residentRepository,
             iFlatRepository flatRepository)
         {
-            _residentRepository = residentRepository;
-            _flatRepository = flatRepository;
+            _residentRepository = residentRepository
+                ?? throw new ArgumentNullException(nameof(residentRepository));
+
+            _flatRepository = flatRepository
+                ?? throw new ArgumentNullException(nameof(flatRepository));
         }
 
         public async Task AddResidentAsync(
@@ -30,44 +28,96 @@ namespace ApartmentManagement.Application.Services
             int flatId,
             ResidentType residentType)
         {
-            var flat = await _flatRepository.GetByIdAsync(flatId);
-            if (flat == null)
-                throw new InvalidOperationException("Flat does not exist.");
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Resident full name is required.", nameof(fullName));
 
-            var activeCount =
-                await _residentRepository.GetActiveResidentCountByFlatAsync(flatId);
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Phone number is required.", nameof(phoneNumber));
 
-            if (activeCount >= DefaultMaxOccupancy)
-                throw new InvalidOperationException("Flat occupancy limit reached.");
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.", nameof(email));
 
-            var resident = new Resident(
-                fullName,
-                phoneNumber,
-                email,
-                flatId,
-                residentType);
+            if (flatId <= 0)
+                throw new ArgumentException("Invalid flat id.", nameof(flatId));
 
-            await _residentRepository.AddAsync(resident);
+            try
+            {
+                var flat = await _flatRepository.GetByIdAsync(flatId);
+                if (flat == null)
+                    throw new InvalidOperationException("Flat does not exist.");
+
+                var activeCount =
+                    await _residentRepository.GetActiveResidentCountByFlatAsync(flatId);
+
+                if (activeCount >= DefaultMaxOccupancy)
+                    throw new InvalidOperationException("Flat occupancy limit reached.");
+
+                var resident = new Resident(
+                    fullName,
+                    phoneNumber,
+                    email,
+                    flatId,
+                    residentType);
+
+                await _residentRepository.AddAsync(resident);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task MoveOutResidentAsync(int residentId)
         {
-            var resident = await _residentRepository.GetByIdAsync(residentId);
-            if (resident == null) return;
+            if (residentId <= 0)
+                throw new ArgumentException("Invalid resident id.", nameof(residentId));
 
-            resident.MoveOut();
-            await _residentRepository.UpdateAsync(resident);
+            try
+            {
+                var resident = await _residentRepository.GetByIdAsync(residentId);
+                if (resident == null)
+                    throw new InvalidOperationException("Resident not found.");
+
+                if (!resident.IsActive)
+                    throw new InvalidOperationException("Resident is already moved out.");
+
+                resident.MoveOut();
+                await _residentRepository.UpdateAsync(resident);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
-        public Task<IReadOnlyList<Resident>> GetResidentsByFlatAsync(int flatId)
+        public async Task<IReadOnlyList<Resident>> GetResidentsByFlatAsync(int flatId)
         {
-            return _residentRepository.GetByFlatAsync(flatId);
+            if (flatId <= 0)
+                throw new ArgumentException("Invalid flat id.", nameof(flatId));
+
+            try
+            {
+                return await _residentRepository.GetByFlatAsync(flatId);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
-        public Task DeleteResidentAsync(int residentId)
+        public async Task DeleteResidentAsync(int residentId)
         {
-            return _residentRepository.DeleteAsync(residentId);
+            if (residentId <= 0)
+                throw new ArgumentException("Invalid resident id.", nameof(residentId));
+
+            try
+            {
+                await _residentRepository.DeleteAsync(residentId);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
-
 }

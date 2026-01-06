@@ -10,27 +10,47 @@ namespace ApartmentManagement.Application.Services
 
         public ApartmentService(iApartmentRepository apartmentRepository)
         {
-            _apartmentRepository = apartmentRepository;
+            _apartmentRepository = apartmentRepository
+                ?? throw new ArgumentNullException(nameof(apartmentRepository));
         }
 
         public async Task<IReadOnlyList<ApartmentDto>> GetApartmentsAsync()
         {
-            var apartments = await _apartmentRepository.GetAllAsync();
-
-            return apartments.Select(a => new ApartmentDto
+            try
             {
-                Id = a.Id,
-                Name = a.Name,
-                Address = a.Address,
-                FlatCount = a.Flats.Count
-            }).ToList();
+                var apartments = await _apartmentRepository.GetAllAsync();
+
+                return apartments.Select(a => new ApartmentDto
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    Address = a.Address,
+                    FlatCount = a.Flats.Count
+                }).ToList();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
-
-        public Task AddApartmentAsync(string name, string address)
+        public async Task AddApartmentAsync(string name, string address)
         {
-            var apartment = new Apartment(name, address);
-            return _apartmentRepository.AddAsync(apartment);
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Apartment name is required.", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentException("Apartment address is required.", nameof(address));
+
+            try
+            {
+                var apartment = new Apartment(name, address);
+                await _apartmentRepository.AddAsync(apartment);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }

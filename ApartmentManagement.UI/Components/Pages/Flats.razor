@@ -13,6 +13,13 @@
                         Add Flat
                     </h4>
 
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             Flat Number
@@ -44,13 +51,6 @@
     </div>
 </div>
 
-
-@if (!string.IsNullOrWhiteSpace(errorMessage))
-{
-    <div class="alert alert-danger">
-        @errorMessage
-    </div>
-}
 @if (flats == null)
 {
     <p>Loading...</p>
@@ -85,7 +85,6 @@ else
             }
         </tbody>
     </table>
-
 }
 
 @code {
@@ -97,21 +96,12 @@ else
     private string flatNumber = string.Empty;
     private int floor;
 
+    private string? errorMessage;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadFlats();
     }
-
-    private async Task AddFlat()
-    {
-        await FlatService.AddFlatAsync(flatNumber, floor, ApartmentId);
-        flatNumber = string.Empty;
-        floor = 0;
-
-        await LoadFlats();
-    }
-
-    private string? errorMessage;
 
     private async Task LoadFlats()
     {
@@ -126,11 +116,37 @@ else
         }
     }
 
+    private async Task AddFlat()
+    {
+        try
+        {
+            errorMessage = null;
+
+            await FlatService.AddFlatAsync(flatNumber, floor, ApartmentId);
+
+            flatNumber = string.Empty;
+            floor = 0;
+
+            await LoadFlats();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
 
     private async Task DeleteFlat(int id)
     {
-        await FlatService.DeleteFlatAsync(id);
-        await LoadFlats();
-    }
+        try
+        {
+            errorMessage = null;
 
+            await FlatService.DeleteFlatAsync(id);
+            await LoadFlats();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
 }

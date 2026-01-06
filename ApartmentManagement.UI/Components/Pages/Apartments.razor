@@ -2,15 +2,31 @@
 @using ApartmentManagement.Application.DTOs
 @inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
 
-<h3>List of Apartments</h3>
+<h3 class="mb-4">List of Apartments</h3>
 
-@if (apartments == null)
+@if (!string.IsNullOrWhiteSpace(errorMessage))
 {
-    <p>Loading...</p>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="ClearMessages"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="ClearMessages"></button>
+    </div>
+}
+
+@if (isLoading)
+{
+    <p>Loading apartments...</p>
 }
 else
 {
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow-sm border-0">
@@ -39,8 +55,9 @@ else
 
                         <div class="d-grid">
                             <button class="btn btn-primary"
+                                    disabled="@isSubmitting"
                                     @onclick="AddApartment">
-                                Add Apartment
+                                @(isSubmitting ? "Saving..." : "Add Apartment")
                             </button>
                         </div>
                     </div>
@@ -48,7 +65,6 @@ else
             </div>
         </div>
     </div>
-
 
     <table class="table table-striped">
         <thead class="table-dark">
@@ -59,7 +75,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var apartment in apartments)
+            @foreach (var apartment in apartments!)
             {
                 <tr>
                     <td>@apartment.Name</td>
@@ -73,26 +89,72 @@ else
             }
         </tbody>
     </table>
-
 }
 
 @code {
     private IReadOnlyList<ApartmentDto>? apartments;
+
     private string name = string.Empty;
     private string address = string.Empty;
 
+    private string? errorMessage;
+    private string? successMessage;
+
+    private bool isLoading = true;
+    private bool isSubmitting;
+
     protected override async Task OnInitializedAsync()
     {
-        apartments = await ApartmentService.GetApartmentsAsync();
+        await LoadApartmentsAsync();
+    }
+
+    private async Task LoadApartmentsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            apartments = await ApartmentService.GetApartmentsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task AddApartment()
     {
-        await ApartmentService.AddApartmentAsync(name, address);
-        apartments = await ApartmentService.GetApartmentsAsync();
+        ClearMessages();
 
-        name = string.Empty;
-        address = string.Empty;
+        try
+        {
+            isSubmitting = true;
+
+            await ApartmentService.AddApartmentAsync(name, address);
+            apartments = await ApartmentService.GetApartmentsAsync();
+
+            name = string.Empty;
+            address = string.Empty;
+
+            successMessage = "Apartment added successfully.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void ClearMessages()
+    {
+        errorMessage = null;
+        successMessage = null;
     }
 }
 

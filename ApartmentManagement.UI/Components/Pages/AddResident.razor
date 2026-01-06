@@ -1,0 +1,145 @@
+﻿@page "/residents/add"
+@using ApartmentManagement.Application.DTOs
+@using ApartmentManagement.Application.Services
+
+@inject ResidentService ResidentService
+@inject FlatService FlatService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body bg-light">
+                    <h4 class="card-title mb-4">
+                        Add Resident
+                    </h4>
+
+                    <div class="mb-3">
+                        <label class="form-label">Flat</label>
+                        <select class="form-select"
+                                @bind="selectedFlatId">
+                            <option value="">-- Select Flat --</option>
+                            @foreach (var flat in flats)
+                            {
+                                <option value="@flat.Id">
+                                    @($"{flat.FlatNumber} (Floor {flat.Floor})")
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input class="form-control"
+                               @bind="fullName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input class="form-control"
+                               @bind="phoneNumber" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input class="form-control"
+                               type="email"
+                               @bind="email" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Resident Type</label>
+                        <select class="form-select"
+                                @bind="residentType">
+                            <option value="">-- Select --</option>
+                            <option value="@ResidentType.Owner">Owner</option>
+                            <option value="@ResidentType.Tenant">Tenant</option>
+                        </select>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary"
+                                @onclick="AddResidentAsync">
+                            Add Resident
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<FlatDto>? flats=Array.Empty<FlatDto>();
+
+    private int selectedFlatId;
+    private string fullName = string.Empty;
+    private string phoneNumber = string.Empty;
+    private string email = string.Empty;
+    private ResidentType residentType = ResidentType.Tenant;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            errorMessage = null;
+            await LoadFlatsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task LoadFlatsAsync()
+    {
+        try
+        {
+            flats = await FlatService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+        }
+    }
+
+    private async Task AddResidentAsync()
+    {
+        try
+        {
+            errorMessage = null;
+
+            if (selectedFlatId == 0)
+            {
+                errorMessage = "Please select a flat.";
+                return;
+            }
+
+            await ResidentService.AddResidentAsync(
+                fullName,
+                phoneNumber,
+                email,
+                selectedFlatId,
+                residentType);
+
+            NavigationManager.NavigateTo("/residents");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

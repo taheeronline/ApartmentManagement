@@ -11,53 +11,129 @@ namespace ApartmentManagement.Infrastructure.Repositories
 
         public FlatRepository(ApartmentDbContext context)
         {
-            _context = context;
+            _context = context
+                ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task AddAsync(Flat flat)
         {
-            await _context.Flats.AddAsync(flat);
-            await _context.SaveChangesAsync();
+            if (flat == null)
+                throw new ArgumentNullException(nameof(flat));
+
+            try
+            {
+                await _context.Flats.AddAsync(flat);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task<Flat?> GetByIdAsync(int id)
         {
-            return await _context.Flats
-                .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == id);
+            if (id <= 0)
+                throw new ArgumentException("Invalid flat id.", nameof(id));
+
+            try
+            {
+                return await _context.Flats
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(f => f.Id == id);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task<IReadOnlyList<Flat>> GetByApartmentIdAsync(int apartmentId)
         {
-            return await _context.Flats
-                .AsNoTracking()
-                .Where(f => f.ApartmentId == apartmentId)
-                .ToListAsync();
+            if (apartmentId <= 0)
+                throw new ArgumentException("Invalid apartment id.", nameof(apartmentId));
+
+            try
+            {
+                return await _context.Flats
+                    .AsNoTracking()
+                    .Where(f => f.ApartmentId == apartmentId)
+                    .ToListAsync();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public async Task<IReadOnlyList<Flat>> GetAllAsync()
+        {
+            try
+            {
+                return await _context.Flats
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task<bool> ExistsAsync(int apartmentId, string flatNumber)
         {
-            return await _context.Flats
-                .AnyAsync(f =>
+            if (apartmentId <= 0)
+                throw new ArgumentException("Invalid apartment id.", nameof(apartmentId));
+
+            if (string.IsNullOrWhiteSpace(flatNumber))
+                throw new ArgumentException("Flat number is required.", nameof(flatNumber));
+
+            try
+            {
+                return await _context.Flats.AnyAsync(f =>
                     f.ApartmentId == apartmentId &&
                     f.FlatNumber == flatNumber);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task DeleteAsync(int id)
         {
-            var flat = await _context.Flats.FindAsync(id);
-            if (flat == null) return;
+            if (id <= 0)
+                throw new ArgumentException("Invalid flat id.", nameof(id));
 
-            _context.Flats.Remove(flat);
-            await _context.SaveChangesAsync();
+            try
+            {
+                var flat = await _context.Flats.FindAsync(id);
+                if (flat == null)
+                    return;
+
+                _context.Flats.Remove(flat);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task UpdateAsync(Flat flat)
         {
-            _context.Flats.Update(flat);
-            await _context.SaveChangesAsync();
+            if (flat == null)
+                throw new ArgumentNullException(nameof(flat));
+
+            try
+            {
+                _context.Flats.Update(flat);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
-
-
     }
 }

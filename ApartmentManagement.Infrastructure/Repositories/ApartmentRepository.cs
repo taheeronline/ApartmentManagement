@@ -11,28 +11,56 @@ namespace ApartmentManagement.Infrastructure.Repositories
 
         public ApartmentRepository(ApartmentDbContext context)
         {
-            _context = context;
+            _context = context
+                ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task AddAsync(Apartment apartment)
         {
-            await _context.Apartments.AddAsync(apartment);
-            await _context.SaveChangesAsync();
+            if (apartment == null)
+                throw new ArgumentNullException(nameof(apartment));
+
+            try
+            {
+                await _context.Apartments.AddAsync(apartment);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task<IReadOnlyList<Apartment>> GetAllAsync()
         {
-            return await _context.Apartments
-                .AsNoTracking()
-                .Include(a => a.Flats)
-                .ToListAsync();
+            try
+            {
+                return await _context.Apartments
+                    .AsNoTracking()
+                    .Include(a => a.Flats)
+                    .ToListAsync();
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         public async Task<Apartment?> GetByIdAsync(int id)
         {
-            return await _context.Apartments
-                .Include(a => a.Flats)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            if (id <= 0)
+                throw new ArgumentException("Invalid apartment id.", nameof(id));
+
+            try
+            {
+                return await _context.Apartments
+                    .Include(a => a.Flats)
+                    .FirstOrDefaultAsync(a => a.Id == id);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }

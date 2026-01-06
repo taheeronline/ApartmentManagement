@@ -6,6 +6,7 @@ namespace ApartmentManagement.Application.Interfaces
     {
         Task<Flat?> GetByIdAsync(int id);
         Task<IReadOnlyList<Flat>> GetByApartmentIdAsync(int apartmentId);
+        Task<IReadOnlyList<Flat>> GetAllAsync();
         Task AddAsync(Flat flat);
         Task<bool> ExistsAsync(int apartmentId, string flatNumber);
         Task DeleteAsync(int id);
