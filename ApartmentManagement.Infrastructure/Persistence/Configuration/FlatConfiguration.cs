@@ -18,6 +18,10 @@ namespace ApartmentManagement.Infrastructure.Persistence.Configuration
 
             builder.Property(f => f.Floor)
                    .IsRequired();
+
+            builder.Navigation(f => f.Residents)
+                   .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         }
     }
 }

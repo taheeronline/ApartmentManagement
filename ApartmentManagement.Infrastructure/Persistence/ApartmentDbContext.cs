@@ -12,6 +12,8 @@ namespace ApartmentManagement.Infrastructure.Persistence
 
         public DbSet<Apartment> Apartments => Set<Apartment>();
         public DbSet<Flat> Flats => Set<Flat>();
+        public DbSet<Resident> Residents => Set<Resident>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -15,9 +15,11 @@ builder.Services.AddDbContext<ApartmentDbContext>(options =>
 
 builder.Services.AddScoped<iApartmentRepository, ApartmentRepository>();
 builder.Services.AddScoped<iFlatRepository, FlatRepository>();
+builder.Services.AddScoped<iResidentRepository, ResidentRepository>();
 
 builder.Services.AddScoped<ApartmentService>();
 builder.Services.AddScoped<FlatService>();
+builder.Services.AddScoped<ResidentService>();
 
 var app = builder.Build();
 
