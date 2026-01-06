@@ -32,6 +32,22 @@ namespace ApartmentManagement.Infrastructure.Repositories
             }
         }
 
+        public async Task<IReadOnlyList<Resident>> GetAllAsync()
+        {
+            try
+            {
+                return await _context.Residents
+                    .AsNoTracking()
+                    .Include(r => r.Flat)
+                    .OrderBy(r => r.MoveInDate)
+                    .ToListAsync();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
         public async Task<IReadOnlyList<Resident>> GetByFlatAsync(int flatId)
         {
             if (flatId <= 0)

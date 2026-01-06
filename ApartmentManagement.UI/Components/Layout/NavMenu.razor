@@ -8,21 +8,22 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="apartments">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Apartments
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Apartments
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="@($"/residents/add")">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Add Residents
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/residents" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Residents
             </NavLink>
         </div>
 

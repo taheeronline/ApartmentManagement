@@ -6,6 +6,8 @@ namespace ApartmentManagement.Application.Interfaces
     {
         Task<Resident?> GetByIdAsync(int id);
 
+        Task<IReadOnlyList<Resident>> GetAllAsync();
+
         Task<IReadOnlyList<Resident>> GetByFlatAsync(int flatId);
 
         Task<int> GetActiveResidentCountByFlatAsync(int flatId);

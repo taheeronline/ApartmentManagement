@@ -1,0 +1,81 @@
+﻿@page "/residents"
+@using ApartmentManagement.Application.DTOs.ApartmentManagement.Application.DTOs
+@using ApartmentManagement.Application.Services
+
+@inject ApartmentManagement.Application.Services.ResidentService ResidentService
+
+@if (residents == null)
+{
+    <p>Loading residents...</p>
+}
+else if (!residents.Any())
+{
+    <div class="alert alert-info">
+        No residents added yet.
+    </div>
+}
+else
+{
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Residents</h5>
+        </div>
+
+        <div class="card-body"
+             style="max-height: 1000px; overflow-y: auto;">
+
+            @foreach (var resident in residents)
+            {
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between">
+                            <h6 class="fw-bold mb-1">
+                                @resident.FullName
+                            </h6>
+
+                            <span class="badge
+                                        @(resident.ResidentType == ResidentType.Owner
+                                                                      ? "bg-success"
+                                                                      : "bg-primary")">
+                                @resident.ResidentType
+                            </span>
+                        </div>
+
+                        <div class="text-muted small mb-2">
+                            Flat @resident.FlatNumber · Floor @resident.Floor
+                        </div>
+
+                        <div class="small">
+                            <div>
+                                <strong>Phone:</strong> @resident.PhoneNumber
+                            </div>
+                            <div>
+                                <strong>Email:</strong> @resident.Email
+                            </div>
+                            <div>
+                                <strong>Moved In:</strong>
+                                @resident.MoveInDate.ToString("dd MMM yyyy")
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<ResidentDto>? residents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResidents();
+    }
+
+    private async Task LoadResidents()
+    {
+        residents = await ResidentService.GetAllAsync();
+    }
+}
