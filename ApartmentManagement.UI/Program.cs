@@ -21,6 +21,18 @@ builder.Services.AddScoped<ApartmentService>();
 builder.Services.AddScoped<FlatService>();
 builder.Services.AddScoped<ResidentService>();
 
+// Add logging for application services and repositories
+builder.Services.AddLogging();
+
+// Re-register services with ILogger-enabled constructors
+builder.Services.AddScoped<ApartmentService, ApartmentService>();
+builder.Services.AddScoped<FlatService, FlatService>();
+builder.Services.AddScoped<ResidentService, ResidentService>();
+
+builder.Services.AddScoped<ApartmentRepository>();
+builder.Services.AddScoped<FlatRepository>();
+builder.Services.AddScoped<ResidentRepository>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

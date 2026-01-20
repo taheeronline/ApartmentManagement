@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Application.DTOs;
+using Microsoft.Extensions.Logging;
 using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
 
@@ -7,11 +8,13 @@ namespace ApartmentManagement.Application.Services
     public class FlatService
     {
         private readonly iFlatRepository _flatRepository;
+        private readonly ILogger<FlatService> _logger;
 
-        public FlatService(iFlatRepository flatRepository)
+        public FlatService(iFlatRepository flatRepository, ILogger<FlatService> logger)
         {
             _flatRepository = flatRepository
                 ?? throw new ArgumentNullException(nameof(flatRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IReadOnlyList<FlatDto>> GetFlatsByApartmentAsync(int apartmentId)
@@ -19,41 +22,26 @@ namespace ApartmentManagement.Application.Services
             if (apartmentId <= 0)
                 throw new ArgumentException("Invalid apartment id.", nameof(apartmentId));
 
-            try
-            {
-                var flats = await _flatRepository.GetByApartmentIdAsync(apartmentId);
+            var flats = await _flatRepository.GetByApartmentIdAsync(apartmentId);
 
-                return flats.Select(f => new FlatDto
-                {
-                    Id = f.Id,
-                    FlatNumber = f.FlatNumber,
-                    Floor = f.Floor
-                }).ToList();
-            }
-            catch
+            return flats.Select(f => new FlatDto
             {
-                // Preserve original stack trace
-                throw;
-            }
+                Id = f.Id,
+                FlatNumber = f.FlatNumber,
+                Floor = f.Floor
+            }).ToList();
         }
 
         public async Task<IReadOnlyList<FlatDto>> GetAllAsync()
         {
-            try
-            {
-                var flats = await _flatRepository.GetAllAsync();
+            var flats = await _flatRepository.GetAllAsync();
 
-                return flats.Select(f => new FlatDto
-                {
-                    Id = f.Id,
-                    FlatNumber = f.FlatNumber,
-                    Floor = f.Floor
-                }).ToList();
-            }
-            catch
+            return flats.Select(f => new FlatDto
             {
-                throw;
-            }
+                Id = f.Id,
+                FlatNumber = f.FlatNumber,
+                Floor = f.Floor
+            }).ToList();
         }
 
         public async Task AddFlatAsync(string flatNumber, int floor, int apartmentId)

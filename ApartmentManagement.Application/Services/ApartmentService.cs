@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Application.DTOs;
+using Microsoft.Extensions.Logging;
 using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
 
@@ -7,11 +8,13 @@ namespace ApartmentManagement.Application.Services
     public class ApartmentService
     {
         private readonly iApartmentRepository _apartmentRepository;
+        private readonly ILogger<ApartmentService> _logger;
 
-        public ApartmentService(iApartmentRepository apartmentRepository)
+        public ApartmentService(iApartmentRepository apartmentRepository, ILogger<ApartmentService> logger)
         {
             _apartmentRepository = apartmentRepository
                 ?? throw new ArgumentNullException(nameof(apartmentRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IReadOnlyList<ApartmentDto>> GetApartmentsAsync()
@@ -20,16 +23,21 @@ namespace ApartmentManagement.Application.Services
             {
                 var apartments = await _apartmentRepository.GetAllAsync();
 
-                return apartments.Select(a => new ApartmentDto
+                var result = apartments.Select(a => new ApartmentDto
                 {
                     Id = a.Id,
                     Name = a.Name,
                     Address = a.Address,
                     FlatCount = a.Flats.Count
                 }).ToList();
+
+                _logger.LogInformation("Retrieved {Count} apartments", result.Count);
+
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to get apartments");
                 throw;
             }
         }
@@ -46,9 +54,11 @@ namespace ApartmentManagement.Application.Services
             {
                 var apartment = new Apartment(name, address);
                 await _apartmentRepository.AddAsync(apartment);
+                _logger.LogInformation("Added apartment {Name}", name);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to add apartment {Name}", name);
                 throw;
             }
         }

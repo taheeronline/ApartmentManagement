@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using ApartmentManagement.Domain.Entities;
 using ApartmentManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +9,13 @@ namespace ApartmentManagement.Infrastructure.Repositories
     public class ApartmentRepository : iApartmentRepository
     {
         private readonly ApartmentDbContext _context;
+        private readonly ILogger<ApartmentRepository> _logger;
 
-        public ApartmentRepository(ApartmentDbContext context)
+        public ApartmentRepository(ApartmentDbContext context, ILogger<ApartmentRepository> logger)
         {
             _context = context
                 ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task AddAsync(Apartment apartment)
@@ -20,30 +23,17 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (apartment == null)
                 throw new ArgumentNullException(nameof(apartment));
 
-            try
-            {
-                await _context.Apartments.AddAsync(apartment);
-                await _context.SaveChangesAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            await _context.Apartments.AddAsync(apartment);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Added apartment {ApartmentName}", apartment.Name);
         }
 
         public async Task<IReadOnlyList<Apartment>> GetAllAsync()
         {
-            try
-            {
-                return await _context.Apartments
-                    .AsNoTracking()
-                    .Include(a => a.Flats)
-                    .ToListAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Apartments
+                .AsNoTracking()
+                .Include(a => a.Flats)
+                .ToListAsync();
         }
 
         public async Task<Apartment?> GetByIdAsync(int id)
@@ -51,16 +41,9 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (id <= 0)
                 throw new ArgumentException("Invalid apartment id.", nameof(id));
 
-            try
-            {
-                return await _context.Apartments
-                    .Include(a => a.Flats)
-                    .FirstOrDefaultAsync(a => a.Id == id);
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Apartments
+                .Include(a => a.Flats)
+                .FirstOrDefaultAsync(a => a.Id == id);
         }
     }
 }

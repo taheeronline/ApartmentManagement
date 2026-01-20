@@ -1,4 +1,5 @@
 ﻿using ApartmentManagement.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using ApartmentManagement.Domain.Entities;
 using ApartmentManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +9,13 @@ namespace ApartmentManagement.Infrastructure.Repositories
     public class ResidentRepository : iResidentRepository
     {
         private readonly ApartmentDbContext _context;
+        private readonly ILogger<ResidentRepository> _logger;
 
-        public ResidentRepository(ApartmentDbContext context)
+        public ResidentRepository(ApartmentDbContext context, ILogger<ResidentRepository> logger)
         {
             _context = context
                 ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<Resident?> GetByIdAsync(int id)
@@ -20,32 +23,18 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (id <= 0)
                 throw new ArgumentException("Invalid resident id.", nameof(id));
 
-            try
-            {
-                return await _context.Residents
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.Id == id);
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Residents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id);
         }
 
         public async Task<IReadOnlyList<Resident>> GetAllAsync()
         {
-            try
-            {
-                return await _context.Residents
-                    .AsNoTracking()
-                    .Include(r => r.Flat)
-                    .OrderBy(r => r.MoveInDate)
-                    .ToListAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Residents
+                .AsNoTracking()
+                .Include(r => r.Flat)
+                .OrderBy(r => r.MoveInDate)
+                .ToListAsync();
         }
 
         public async Task<IReadOnlyList<Resident>> GetByFlatAsync(int flatId)
@@ -53,18 +42,11 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (flatId <= 0)
                 throw new ArgumentException("Invalid flat id.", nameof(flatId));
 
-            try
-            {
-                return await _context.Residents
-                    .AsNoTracking()
-                    .Where(r => r.FlatId == flatId)
-                    .OrderBy(r => r.MoveInDate)
-                    .ToListAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Residents
+                .AsNoTracking()
+                .Where(r => r.FlatId == flatId)
+                .OrderBy(r => r.MoveInDate)
+                .ToListAsync();
         }
 
         public async Task<int> GetActiveResidentCountByFlatAsync(int flatId)
@@ -72,17 +54,10 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (flatId <= 0)
                 throw new ArgumentException("Invalid flat id.", nameof(flatId));
 
-            try
-            {
-                return await _context.Residents
-                    .CountAsync(r =>
-                        r.FlatId == flatId &&
-                        r.MoveOutDate == null);
-            }
-            catch
-            {
-                throw;
-            }
+            return await _context.Residents
+                .CountAsync(r =>
+                    r.FlatId == flatId &&
+                    r.MoveOutDate == null);
         }
 
         public async Task AddAsync(Resident resident)
@@ -90,15 +65,9 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (resident == null)
                 throw new ArgumentNullException(nameof(resident));
 
-            try
-            {
-                _context.Residents.Add(resident);
-                await _context.SaveChangesAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            _context.Residents.Add(resident);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Added resident {FullName} to flat {FlatId}", resident.FullName, resident.FlatId);
         }
 
         public async Task UpdateAsync(Resident resident)
@@ -106,15 +75,9 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (resident == null)
                 throw new ArgumentNullException(nameof(resident));
 
-            try
-            {
-                _context.Residents.Update(resident);
-                await _context.SaveChangesAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            _context.Residents.Update(resident);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Updated resident {ResidentId}", resident.Id);
         }
 
         public async Task DeleteAsync(int id)
@@ -122,19 +85,13 @@ namespace ApartmentManagement.Infrastructure.Repositories
             if (id <= 0)
                 throw new ArgumentException("Invalid resident id.", nameof(id));
 
-            try
-            {
-                var resident = await _context.Residents.FindAsync(id);
-                if (resident == null)
-                    return;
+            var resident = await _context.Residents.FindAsync(id);
+            if (resident == null)
+                return;
 
-                _context.Residents.Remove(resident); // replace with soft delete if needed
-                await _context.SaveChangesAsync();
-            }
-            catch
-            {
-                throw;
-            }
+            _context.Residents.Remove(resident); // replace with soft delete if needed
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Deleted resident {ResidentId}", id);
         }
     }
 }

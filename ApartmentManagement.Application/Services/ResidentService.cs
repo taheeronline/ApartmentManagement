@@ -1,4 +1,6 @@
-﻿using ApartmentManagement.Application.DTOs.ApartmentManagement.Application.DTOs;
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
+using ApartmentManagement.Application.DTOs;
 using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
 
@@ -8,18 +10,21 @@ namespace ApartmentManagement.Application.Services
     {
         private readonly iResidentRepository _residentRepository;
         private readonly iFlatRepository _flatRepository;
+        private readonly ILogger<ResidentService> _logger;
 
         private const int DefaultMaxOccupancy = 5;
 
         public ResidentService(
             iResidentRepository residentRepository,
-            iFlatRepository flatRepository)
+            iFlatRepository flatRepository,
+            ILogger<ResidentService> logger)
         {
             _residentRepository = residentRepository
                 ?? throw new ArgumentNullException(nameof(residentRepository));
-
             _flatRepository = flatRepository
                 ?? throw new ArgumentNullException(nameof(flatRepository));
+
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task AddResidentAsync(
@@ -41,31 +46,23 @@ namespace ApartmentManagement.Application.Services
             if (flatId <= 0)
                 throw new ArgumentException("Invalid flat id.", nameof(flatId));
 
-            try
-            {
-                var flat = await _flatRepository.GetByIdAsync(flatId);
-                if (flat == null)
-                    throw new InvalidOperationException("Flat does not exist.");
+            var flat = await _flatRepository.GetByIdAsync(flatId);
+            if (flat == null)
+                throw new InvalidOperationException("Flat does not exist.");
 
-                var activeCount =
-                    await _residentRepository.GetActiveResidentCountByFlatAsync(flatId);
+            var activeCount = await _residentRepository.GetActiveResidentCountByFlatAsync(flatId);
 
-                if (activeCount >= DefaultMaxOccupancy)
-                    throw new InvalidOperationException("Flat occupancy limit reached.");
+            if (activeCount >= DefaultMaxOccupancy)
+                throw new InvalidOperationException("Flat occupancy limit reached.");
 
-                var resident = new Resident(
-                    fullName,
-                    phoneNumber,
-                    email,
-                    flatId,
-                    residentType);
+            var resident = new Resident(
+                fullName,
+                phoneNumber,
+                email,
+                flatId,
+                residentType);
 
-                await _residentRepository.AddAsync(resident);
-            }
-            catch
-            {
-                throw;
-            }
+            await _residentRepository.AddAsync(resident);
         }
 
         public async Task MoveOutResidentAsync(int residentId)
@@ -73,22 +70,18 @@ namespace ApartmentManagement.Application.Services
             if (residentId <= 0)
                 throw new ArgumentException("Invalid resident id.", nameof(residentId));
 
-            try
+            var resident = await _residentRepository.GetByIdAsync(residentId);
+            if (resident == null)
             {
-                var resident = await _residentRepository.GetByIdAsync(residentId);
-                if (resident == null)
-                    throw new InvalidOperationException("Resident not found.");
-
-                if (!resident.IsActive)
-                    throw new InvalidOperationException("Resident is already moved out.");
-
-                resident.MoveOut();
-                await _residentRepository.UpdateAsync(resident);
+                _logger.LogWarning("Attempt to move out non-existing resident {ResidentId}", residentId);
+                throw new InvalidOperationException("Resident not found.");
             }
-            catch
-            {
-                throw;
-            }
+
+            if (!resident.IsActive)
+                throw new InvalidOperationException("Resident is already moved out.");
+
+            resident.MoveOut();
+            await _residentRepository.UpdateAsync(resident);
         }
 
         public async Task<IReadOnlyList<Resident>> GetResidentsByFlatAsync(int flatId)
@@ -96,40 +89,26 @@ namespace ApartmentManagement.Application.Services
             if (flatId <= 0)
                 throw new ArgumentException("Invalid flat id.", nameof(flatId));
 
-            try
-            {
-                return await _residentRepository.GetByFlatAsync(flatId);
-            }
-            catch
-            {
-                throw;
-            }
+            return await _residentRepository.GetByFlatAsync(flatId);
         }
 
         public async Task<IReadOnlyList<ResidentDto>> GetAllAsync()
         {
-            try
-            {
-                var residents= await _residentRepository.GetAllAsync();
+            var residents = await _residentRepository.GetAllAsync();
 
-                return residents.Select(r => new ResidentDto
-                {
-                    Id = r.Id,
-                    FullName = r.FullName,
-                    PhoneNumber = r.PhoneNumber,
-                    Email = r.Email,
-                    FlatId = r.FlatId,
-                    FlatNumber = r.Flat.FlatNumber,
-                    Floor = r.Flat.Floor,
-                    ResidentType = r.ResidentType,
-                    MoveInDate = r.MoveInDate,
-                    MoveOutDate = r.MoveOutDate
-                }).ToList();
-            }
-            catch
+            return residents.Select(r => new ResidentDto
             {
-                throw;
-            }
+                Id = r.Id,
+                FullName = r.FullName,
+                PhoneNumber = r.PhoneNumber,
+                Email = r.Email,
+                FlatId = r.FlatId,
+                FlatNumber = r.Flat.FlatNumber,
+                Floor = r.Flat.Floor,
+                ResidentType = r.ResidentType,
+                MoveInDate = r.MoveInDate,
+                MoveOutDate = r.MoveOutDate
+            }).ToList();
         }
 
         public async Task DeleteResidentAsync(int residentId)
@@ -137,14 +116,8 @@ namespace ApartmentManagement.Application.Services
             if (residentId <= 0)
                 throw new ArgumentException("Invalid resident id.", nameof(residentId));
 
-            try
-            {
-                await _residentRepository.DeleteAsync(residentId);
-            }
-            catch
-            {
-                throw;
-            }
+            await _residentRepository.DeleteAsync(residentId);
+            _logger.LogInformation("Deleted resident {ResidentId}", residentId);
         }
     }
 }
