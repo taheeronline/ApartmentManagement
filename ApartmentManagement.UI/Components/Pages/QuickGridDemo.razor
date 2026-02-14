@@ -1,4 +1,4 @@
-﻿@page "/apartmentgrid"
+﻿@page "/QuickGridDemo"
 @rendermode InteractiveServer
 @using ApartmentManagement.UI.Models
 @using Microsoft.AspNetCore.Components.QuickGrid
@@ -52,8 +52,8 @@
 
 @code
 {
-    PaginationState paginationState = new() { ItemsPerPage = 3 };
-    IQueryable<Person> people = default;
+    PaginationState paginationState = new() { ItemsPerPage = 5 };
+    IQueryable<Person>? people = default;
     int idCount;
 
     [SupplyParameterFromForm]
