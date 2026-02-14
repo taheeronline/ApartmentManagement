@@ -62,5 +62,46 @@ namespace ApartmentManagement.Application.Services
                 throw;
             }
         }
+
+        public async Task UpdateApartmentAsync(int id, string name, string address)
+        {
+            if (id <= 0) throw new ArgumentException("Invalid id", nameof(id));
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required", nameof(name));
+            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentException("Address is required", nameof(address));
+
+            try
+            {
+                var apartment = await _apartmentRepository.GetByIdAsync(id)
+                    ?? throw new InvalidOperationException("Apartment not found.");
+
+                apartment.UpdateDetails(name, address);
+                await _apartmentRepository.UpdateAsync(apartment);
+                _logger.LogInformation("Updated apartment {Id}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update apartment {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task DeleteApartmentAsync(int id)
+        {
+            if (id <= 0) throw new ArgumentException("Invalid id", nameof(id));
+
+            try
+            {
+                var apartment = await _apartmentRepository.GetByIdAsync(id)
+                    ?? throw new InvalidOperationException("Apartment not found.");
+
+                await _apartmentRepository.DeleteAsync(apartment);
+                _logger.LogInformation("Deleted apartment {Id}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete apartment {Id}", id);
+                throw;
+            }
+        }
     }
 }

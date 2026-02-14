@@ -21,5 +21,17 @@
         {
             _flats.Add(flat);
         }
+
+        // Allow controlled updates to apartment details
+        public void UpdateDetails(string name, string address)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name is required.", nameof(name));
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentException("Address is required.", nameof(address));
+
+            Name = name;
+            Address = address;
+        }
     }
 }

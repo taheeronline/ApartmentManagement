@@ -1,0 +1,135 @@
+@page "/apartment-quickgrid"
+@rendermode InteractiveServer
+@using System
+@using System.Linq
+@using ApartmentManagement.Application.DTOs
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components.Web
+@inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
+
+<PageTitle>Apartment Quick Grid</PageTitle>
+<h3>Apartment Quick Grid</h3>
+<div class="container">
+    <div class="row">
+        <div class="card">
+            <div class="card-header">
+                <EditForm Model="apartmentEdit" OnValidSubmit="SaveApartmentAsync">
+                    <div class="hstack gap-2">
+                        <label class="col-form-label">Name</label>
+                        <InputText class="form-control" @bind-Value="apartmentEdit.Name" />
+                        <label class="col-form-label">Address</label>
+                        <InputText class="form-control" @bind-Value="apartmentEdit.Address" />
+
+                        <button type="submit" class="btn btn-primary">@SaveMode</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="card-body">
+                <QuickGrid Class="table table-striped" Items="apartments" Pagination="paginationState">
+                    <PropertyColumn Property="a => a.Id" Title="ID" Sortable="true" IsDefaultSortColumn />
+                    <PropertyColumn Property="a => a.Name" Title="Name" Sortable="true">
+                        <ColumnOptions>
+                            <input type="search" class="form-control" placeholder="Filter by name"
+                                   @bind="nameFilter" @onkeyup="HandleSearchKeyUp" />
+                        </ColumnOptions>
+                    </PropertyColumn>
+                    <PropertyColumn Property="a => a.Address" Title="Address" Sortable="true" />
+                    <PropertyColumn Property="a => a.FlatCount" Title="Flats" Sortable="true" />
+
+                    <TemplateColumn Title="Actions">
+                        <button class="btn btn-danger" @onclick="@(() => DeleteApartmentAsync(context.Id))">Delete</button>
+                        <button class="btn btn-info" @onclick="@(() => EditApartment(context))">Edit</button>
+                    </TemplateColumn>
+                </QuickGrid>
+            </div>
+            <div class="card-footer">
+                <Paginator State="paginationState" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    PaginationState paginationState = new() { ItemsPerPage = 5 };
+    IQueryable<ApartmentDto> apartments = Array.Empty<ApartmentDto>().AsQueryable();
+    List<ApartmentDto> apartmentsList = new();
+
+    ApartmentDto apartmentEdit { get; set; } = new();
+    string SaveMode = "Add";
+    string nameFilter = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApartmentsAsync();
+    }
+
+    async Task LoadApartmentsAsync()
+    {
+        apartmentsList = (await ApartmentService.GetApartmentsAsync()).ToList();
+        ApplyNameFilter(nameFilter);
+    }
+
+    async Task SaveApartmentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(apartmentEdit.Name) || string.IsNullOrWhiteSpace(apartmentEdit.Address))
+            return;
+
+        if (apartmentEdit.Id > 0)
+        {
+            await ApartmentService.UpdateApartmentAsync(apartmentEdit.Id, apartmentEdit.Name, apartmentEdit.Address);
+            SaveMode = "Add";
+        }
+        else
+        {
+            await ApartmentService.AddApartmentAsync(apartmentEdit.Name, apartmentEdit.Address);
+        }
+
+        apartmentEdit = new ApartmentDto();
+        await LoadApartmentsAsync();
+    }
+
+    async Task DeleteApartmentAsync(int id)
+    {
+        if (id <= 0) return;
+        await ApartmentService.DeleteApartmentAsync(id);
+        await LoadApartmentsAsync();
+    }
+
+    void EditApartment(ApartmentDto apt)
+    {
+        apartmentEdit = new ApartmentDto
+        {
+            Id = apt.Id,
+            Name = apt.Name,
+            Address = apt.Address,
+            FlatCount = apt.FlatCount
+        };
+        SaveMode = "Update";
+    }
+
+    void CancelEdit()
+    {
+        apartmentEdit = new ApartmentDto();
+        SaveMode = "Add";
+    }
+
+    void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ApplyNameFilter(nameFilter);
+    }
+
+    void ApplyNameFilter(string pNameFilter)
+    {
+        if (!string.IsNullOrWhiteSpace(pNameFilter))
+        {
+            apartments = apartmentsList.Where(p => !string.IsNullOrWhiteSpace(p.Name) &&
+                                                  p.Name.Contains(pNameFilter, StringComparison.OrdinalIgnoreCase))
+                                       .AsQueryable();
+        }
+        else
+        {
+            apartments = apartmentsList.AsQueryable();
+        }
+    }
+}

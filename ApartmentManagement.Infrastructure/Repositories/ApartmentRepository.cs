@@ -45,5 +45,25 @@ namespace ApartmentManagement.Infrastructure.Repositories
                 .Include(a => a.Flats)
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
+
+        public async Task UpdateAsync(Apartment apartment)
+        {
+            if (apartment == null)
+                throw new ArgumentNullException(nameof(apartment));
+
+            _context.Apartments.Update(apartment);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Updated apartment {ApartmentName}", apartment.Name);
+        }
+
+        public async Task DeleteAsync(Apartment apartment)
+        {
+            if (apartment == null)
+                throw new ArgumentNullException(nameof(apartment));
+
+            _context.Apartments.Remove(apartment);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Deleted apartment {ApartmentName}", apartment.Name);
+        }
     }
 }
