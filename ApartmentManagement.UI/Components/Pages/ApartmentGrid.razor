@@ -1,0 +1,169 @@
+﻿@page "/apartmentgrid"
+@rendermode InteractiveServer
+@using ApartmentManagement.UI.Models
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using ApartmentManagement.Application.DTOs
+@inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
+
+
+<PageTitle>Grid Demo</PageTitle>
+<h3>Grid Demo</h3>
+<div class="container">
+    <div class="row">
+        <div class="card">
+            <div class="card-header">
+                <EditForm Model="person" onsubmit="AddPerson">
+                    <div class="hstack gap-2">
+                        <label class="col-form-label">Name</label>
+                        <InputText class="form-control" @bind-Value="person.Name"/>
+                        <label class="col-form-label">DoB</label>
+                        <InputDate class="form-control" @bind-Value="person.DateOfBirth"/>
+
+                        <button type="submit" class="btn btn-primary">@SaveMode</button>
+                        <button type="button" class="btn btn-secondary" 
+                                @onclick="@(() => {person = new Person(); SaveMode="Add"; })">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+            <div class="card-body">
+                <QuickGrid Class="table table-striped" Items="people" Pagination="paginationState">
+                    <PropertyColumn Property="p => p.Id" Title="ID" Sortable="true" IsDefaultSortColumn />
+                    <PropertyColumn Property="p => p.Name" Title="Name" Sortable="true" >
+                        <ColumnOptions>
+                            <input type="search" class="form-control" placeholder="Filter by name"
+                                    @bind="nameFilter" @onkeyup="HandleSearchKeyUp" />
+                        </ColumnOptions>
+                    </PropertyColumn>
+                    <PropertyColumn Property="p => p.DateOfBirth" Title="DoB" Sortable="true" />
+                    <PropertyColumn Property="p => ComputeAge(p.DateOfBirth)" Title="Age" Sortable="true" />
+
+                        <TemplateColumn Title="Actions">
+                            <button class="btn btn-danger" @onclick="@(() => DeletePerson(context))">Delete</button>
+                        <button class="btn btn-info" @onclick="@(() => EditPerson(context))">Edit</button>
+                        </TemplateColumn>
+                </QuickGrid>
+            </div>
+            <div class="card-footer">
+                <Paginator State="paginationState"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    PaginationState paginationState = new() { ItemsPerPage = 3 };
+    IQueryable<Person> people = default;
+    int idCount;
+
+    [SupplyParameterFromForm]
+    Person person { get; set; } = new();
+
+    string SaveMode = "Add";
+
+    List<Person> peopleList = new();
+
+    string nameFilter = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        peopleList = LoadData();
+        people=peopleList.AsQueryable();
+        idCount = people.Count();
+    }
+
+    public List<Person> LoadData()
+    {
+        return new List<Person>
+    {
+        new Person { Id = 1, Name = "Amit Sharma", DateOfBirth = new DateOnly(1990, 5, 12) },
+        new Person { Id = 2, Name = "Priya Rao", DateOfBirth = new DateOnly(1988, 11, 3) },
+        new Person { Id = 3, Name = "Rahul Verma", DateOfBirth = new DateOnly(1995, 2, 25) },
+        new Person { Id = 4, Name = "Sneha Kulkarni", DateOfBirth = new DateOnly(1992, 8, 17) },
+        new Person { Id = 5, Name = "Arjun Mehta", DateOfBirth = new DateOnly(1987, 4, 9) },
+        new Person { Id = 6, Name = "Neha Patil", DateOfBirth = new DateOnly(1993, 6, 21) },
+        new Person { Id = 7, Name = "Vikram Singh", DateOfBirth = new DateOnly(1985, 1, 30) },
+        new Person { Id = 8, Name = "Ananya Iyer", DateOfBirth = new DateOnly(1998, 9, 14) },
+        new Person { Id = 9, Name = "Rohan Desai", DateOfBirth = new DateOnly(1991, 12, 5) },
+        new Person { Id = 10, Name = "Meera Nair", DateOfBirth = new DateOnly(1996, 3, 19) }
+    };
+    }
+
+    int ComputeAge(DateOnly pDateOfBirth)
+    {
+        var today=DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - pDateOfBirth.Year;
+        if (pDateOfBirth > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    void AddPerson()
+    {
+        if (person.Name is null || person.DateOfBirth == default) return;
+
+        if (person.Id > 0)
+        {
+            //var peopleList = people.ToList();
+            var index=peopleList.FindIndex(p=>p.Id==person.Id);
+            if (index>=0)
+            {
+                peopleList[index] = new Person
+                {
+                    Id=person.Id,
+                    Name=person.Name,
+                    DateOfBirth=person.DateOfBirth
+                };
+                people = peopleList.AsQueryable();
+            }
+            SaveMode = "Add";
+        }
+        else
+        {
+            idCount++;
+            person.Id = idCount;
+            //var peopleList = people.ToList();
+            peopleList.Add(person);
+        }
+        people = peopleList.AsQueryable();
+        person = new Person();
+        ApplyNameFilter(nameFilter);
+    }
+
+    void DeletePerson(Person personToDelete)
+    {
+        //var peopleList = people.ToList();
+        peopleList.RemoveAll(p => p.Id == personToDelete.Id);
+        people = peopleList.AsQueryable();
+        ApplyNameFilter(nameFilter);
+    }
+
+    void EditPerson(Person personToEdit)
+    {
+        person = new Person()
+            {
+                Id = personToEdit.Id,
+                Name = personToEdit.Name,
+                DateOfBirth = personToEdit.DateOfBirth
+            };
+        SaveMode = "Update";
+    }
+
+    void HandleSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ApplyNameFilter(nameFilter);
+    }
+
+    void ApplyNameFilter(string pNameFilter)
+    {
+        if (!string.IsNullOrWhiteSpace(pNameFilter))
+        {
+            people = peopleList.Where
+                                    (p => p.Name != null &&
+                                        p.Name.Contains(pNameFilter, StringComparison.OrdinalIgnoreCase)).AsQueryable();
+        }
+        else
+        {
+            people = peopleList.AsQueryable();            
+        }
+    }
+}
