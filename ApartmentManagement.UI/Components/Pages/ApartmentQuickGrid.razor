@@ -13,7 +13,7 @@
     <div class="row">
         <div class="card">
             <div class="card-header">
-                <EditForm Model="apartmentEdit" OnValidSubmit="SaveApartmentAsync">
+                <EditForm Model="apartmentEdit" OnValidSubmit="SaveApartmentAsync" Enhance>
                     <div class="hstack gap-2">
                         <label class="col-form-label">Name</label>
                         <InputText class="form-control" @bind-Value="apartmentEdit.Name" />
@@ -27,8 +27,8 @@
             </div>
             <div class="card-body">
                 <QuickGrid Class="table table-striped" Items="apartments" Pagination="paginationState">
-                    <PropertyColumn Property="a => a.Id" Title="ID" Sortable="true" IsDefaultSortColumn />
-                    <PropertyColumn Property="a => a.Name" Title="Name" Sortable="true">
+                    <PropertyColumn Property="a => a.Id" Title="ID" Class="d-none" />
+                    <PropertyColumn Property="a => a.Name" Title="Name" Sortable="true" IsDefaultSortColumn>
                         <ColumnOptions>
                             <input type="search" class="form-control" placeholder="Filter by name"
                                    @bind="nameFilter" @onkeyup="HandleSearchKeyUp" />
