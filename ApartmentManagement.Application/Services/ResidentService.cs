@@ -37,6 +37,10 @@ namespace ApartmentManagement.Application.Services
             if (string.IsNullOrWhiteSpace(fullName))
                 throw new ArgumentException("Resident full name is required.", nameof(fullName));
 
+            // validate name length
+            if (fullName.Length > ApartmentManagement.Application.Validation.ValidationConstants.MaxNameLength)
+                throw new ArgumentException($"Resident full name must be at most {ApartmentManagement.Application.Validation.ValidationConstants.MaxNameLength} characters.", nameof(fullName));
+
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("Phone number is required.", nameof(phoneNumber));
 
@@ -63,6 +67,7 @@ namespace ApartmentManagement.Application.Services
                 residentType);
 
             await _residentRepository.AddAsync(resident);
+            _logger.LogInformation("Added resident {FullName} to flat {FlatId}", fullName, flatId);
         }
 
         public async Task MoveOutResidentAsync(int residentId)

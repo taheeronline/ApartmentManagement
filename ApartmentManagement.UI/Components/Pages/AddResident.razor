@@ -90,44 +90,27 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            errorMessage = null;
-            await LoadFlatsAsync();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
+        errorMessage = null;
+        await LoadFlatsAsync();
     }
 
     private async Task LoadFlatsAsync()
     {
-        try
-        {
-            flats = await FlatService.GetAllAsync();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
-        finally
-        {
-        }
+        flats = await FlatService.GetAllAsync();
     }
 
     private async Task AddResidentAsync()
     {
+        errorMessage = null;
+
+        if (selectedFlatId == 0)
+        {
+            errorMessage = "Please select a flat.";
+            return;
+        }
+
         try
         {
-            errorMessage = null;
-
-            if (selectedFlatId == 0)
-            {
-                errorMessage = "Please select a flat.";
-                return;
-            }
-
             await ResidentService.AddResidentAsync(
                 fullName,
                 phoneNumber,
@@ -137,9 +120,15 @@
 
             NavigationManager.NavigateTo("/residents");
         }
-        catch (Exception ex)
+        catch (ArgumentException ae)
         {
-            errorMessage = ex.Message;
+            // Validation errors -> show friendly message
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            // Domain errors -> show friendly message
+            errorMessage = ioe.Message;
         }
     }
 }

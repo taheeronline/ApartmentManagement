@@ -115,9 +115,13 @@ else
             isLoading = true;
             apartments = await ApartmentService.GetApartmentsAsync();
         }
-        catch (Exception ex)
+        catch (ArgumentException ae)
         {
-            errorMessage = ex.Message;
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
         }
         finally
         {
@@ -128,7 +132,6 @@ else
     private async Task AddApartment()
     {
         ClearMessages();
-
         try
         {
             isSubmitting = true;
@@ -141,9 +144,13 @@ else
 
             successMessage = "Apartment added successfully.";
         }
-        catch (Exception ex)
+        catch (ArgumentException ae)
         {
-            errorMessage = ex.Message;
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
         }
         finally
         {

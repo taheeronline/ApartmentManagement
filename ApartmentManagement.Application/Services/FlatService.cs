@@ -55,22 +55,17 @@ namespace ApartmentManagement.Application.Services
             if (apartmentId <= 0)
                 throw new ArgumentException("Invalid apartment id.", nameof(apartmentId));
 
-            try
+            var exists = await _flatRepository.ExistsAsync(apartmentId, flatNumber);
+            if (exists)
             {
-                var exists = await _flatRepository.ExistsAsync(apartmentId, flatNumber);
-                if (exists)
-                {
-                    throw new InvalidOperationException(
-                        $"Flat '{flatNumber}' already exists in this apartment.");
-                }
+                _logger.LogWarning("Attempt to add duplicate flat {FlatNumber} to apartment {ApartmentId}", flatNumber, apartmentId);
+                throw new InvalidOperationException(
+                    $"Flat '{flatNumber}' already exists in this apartment.");
+            }
 
-                var flat = new Flat(flatNumber, floor, apartmentId);
-                await _flatRepository.AddAsync(flat);
-            }
-            catch
-            {
-                throw;
-            }
+            var flat = new Flat(flatNumber, floor, apartmentId);
+            await _flatRepository.AddAsync(flat);
+            _logger.LogInformation("Added flat {FlatNumber} to apartment {ApartmentId}", flatNumber, apartmentId);
         }
 
         public async Task DeleteFlatAsync(int id)
@@ -78,14 +73,8 @@ namespace ApartmentManagement.Application.Services
             if (id <= 0)
                 throw new ArgumentException("Invalid flat id.", nameof(id));
 
-            try
-            {
-                await _flatRepository.DeleteAsync(id);
-            }
-            catch
-            {
-                throw;
-            }
+            await _flatRepository.DeleteAsync(id);
+            _logger.LogInformation("Deleted flat {FlatId}", id);
         }
     }
 }

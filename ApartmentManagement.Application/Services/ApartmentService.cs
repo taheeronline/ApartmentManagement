@@ -1,4 +1,5 @@
-﻿using ApartmentManagement.Application.DTOs;
+﻿using System.Linq;
+using ApartmentManagement.Application.DTOs;
 using Microsoft.Extensions.Logging;
 using ApartmentManagement.Application.Interfaces;
 using ApartmentManagement.Domain.Entities;
@@ -19,27 +20,19 @@ namespace ApartmentManagement.Application.Services
 
         public async Task<IReadOnlyList<ApartmentDto>> GetApartmentsAsync()
         {
-            try
+            var apartments = await _apartmentRepository.GetAllAsync();
+
+            var result = apartments.Select(a => new ApartmentDto
             {
-                var apartments = await _apartmentRepository.GetAllAsync();
+                Id = a.Id,
+                Name = a.Name,
+                Address = a.Address,
+                FlatCount = a.Flats.Count
+            }).ToList();
 
-                var result = apartments.Select(a => new ApartmentDto
-                {
-                    Id = a.Id,
-                    Name = a.Name,
-                    Address = a.Address,
-                    FlatCount = a.Flats.Count
-                }).ToList();
+            _logger.LogInformation("Retrieved {Count} apartments", result.Count);
 
-                _logger.LogInformation("Retrieved {Count} apartments", result.Count);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get apartments");
-                throw;
-            }
+            return result;
         }
 
         public async Task AddApartmentAsync(string name, string address)
@@ -50,17 +43,12 @@ namespace ApartmentManagement.Application.Services
             if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentException("Apartment address is required.", nameof(address));
 
-            try
-            {
-                var apartment = new Apartment(name, address);
-                await _apartmentRepository.AddAsync(apartment);
-                _logger.LogInformation("Added apartment {Name}", name);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to add apartment {Name}", name);
-                throw;
-            }
+            if (name.Length > ApartmentManagement.Application.Validation.ValidationConstants.MaxNameLength)
+                throw new ArgumentException($"Apartment name must be at most {ApartmentManagement.Application.Validation.ValidationConstants.MaxNameLength} characters.", nameof(name));
+
+            var apartment = new Apartment(name, address);
+            await _apartmentRepository.AddAsync(apartment);
+            _logger.LogInformation("Added apartment {Name}", name);
         }
 
         public async Task UpdateApartmentAsync(int id, string name, string address)
@@ -69,39 +57,23 @@ namespace ApartmentManagement.Application.Services
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required", nameof(name));
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentException("Address is required", nameof(address));
 
-            try
-            {
-                var apartment = await _apartmentRepository.GetByIdAsync(id)
-                    ?? throw new InvalidOperationException("Apartment not found.");
+            var apartment = await _apartmentRepository.GetByIdAsync(id)
+                ?? throw new InvalidOperationException("Apartment not found.");
 
-                apartment.UpdateDetails(name, address);
-                await _apartmentRepository.UpdateAsync(apartment);
-                _logger.LogInformation("Updated apartment {Id}", id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to update apartment {Id}", id);
-                throw;
-            }
+            apartment.UpdateDetails(name, address);
+            await _apartmentRepository.UpdateAsync(apartment);
+            _logger.LogInformation("Updated apartment {Id}", id);
         }
 
         public async Task DeleteApartmentAsync(int id)
         {
             if (id <= 0) throw new ArgumentException("Invalid id", nameof(id));
 
-            try
-            {
-                var apartment = await _apartmentRepository.GetByIdAsync(id)
-                    ?? throw new InvalidOperationException("Apartment not found.");
+            var apartment = await _apartmentRepository.GetByIdAsync(id)
+                ?? throw new InvalidOperationException("Apartment not found.");
 
-                await _apartmentRepository.DeleteAsync(apartment);
-                _logger.LogInformation("Deleted apartment {Id}", id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to delete apartment {Id}", id);
-                throw;
-            }
+            await _apartmentRepository.DeleteAsync(apartment);
+            _logger.LogInformation("Deleted apartment {Id}", id);
         }
     }
 }

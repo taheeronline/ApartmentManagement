@@ -9,6 +9,36 @@
 
 <PageTitle>Apartment Quick Grid</PageTitle>
 <h3>Apartment Quick Grid</h3>
+<style>
+    /* Fix table layout and prevent Name column from expanding. */
+    .table-fixed { table-layout: fixed; }
+
+    .table-fixed th:nth-child(2),
+    .table-fixed td:nth-child(2) {
+        max-width: 280px;
+        width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-fixed td div.cell-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="ClearMessages"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" @onclick="ClearMessages"></button>
+    </div>
+}
 <div class="container">
     <div class="row">
         <div class="card">
@@ -16,7 +46,7 @@
                 <EditForm Model="apartmentEdit" OnValidSubmit="SaveApartmentAsync" Enhance>
                     <div class="hstack gap-2">
                         <label class="col-form-label">Name</label>
-                        <InputText class="form-control" @bind-Value="apartmentEdit.Name" />
+                        <InputText class="form-control" @bind-Value="apartmentEdit.Name" maxlength="70" />
                         <label class="col-form-label">Address</label>
                         <InputText class="form-control" @bind-Value="apartmentEdit.Address" />
 
@@ -26,7 +56,7 @@
                 </EditForm>
             </div>
             <div class="card-body">
-                <QuickGrid Class="table table-striped" Items="apartments" Pagination="paginationState">
+                <QuickGrid Class="table table-striped table-fixed" Items="apartments" Pagination="paginationState">
                     <PropertyColumn Property="a => a.Id" Title="ID" Class="d-none" />
                     <PropertyColumn Property="a => a.Name" Title="Name" Sortable="true" IsDefaultSortColumn>
                         <ColumnOptions>
@@ -58,6 +88,8 @@
     ApartmentDto apartmentEdit { get; set; } = new();
     string SaveMode = "Add";
     string nameFilter = string.Empty;
+    private string? errorMessage;
+    private string? successMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -75,14 +107,49 @@
         if (string.IsNullOrWhiteSpace(apartmentEdit.Name) || string.IsNullOrWhiteSpace(apartmentEdit.Address))
             return;
 
+        ClearMessages();
+
+        // Ensure name length limit
+        if (!string.IsNullOrWhiteSpace(apartmentEdit.Name) && apartmentEdit.Name.Length > 70)
+            apartmentEdit.Name = apartmentEdit.Name[..70];
+
         if (apartmentEdit.Id > 0)
         {
-            await ApartmentService.UpdateApartmentAsync(apartmentEdit.Id, apartmentEdit.Name, apartmentEdit.Address);
+            try
+            {
+                await ApartmentService.UpdateApartmentAsync(apartmentEdit.Id, apartmentEdit.Name, apartmentEdit.Address);
+                successMessage = "Apartment updated successfully.";
+            }
+            catch (ArgumentException ae)
+            {
+                errorMessage = ae.Message;
+                return;
+            }
+            catch (InvalidOperationException ioe)
+            {
+                errorMessage = ioe.Message;
+                return;
+            }
+
             SaveMode = "Add";
         }
         else
         {
-            await ApartmentService.AddApartmentAsync(apartmentEdit.Name, apartmentEdit.Address);
+            try
+            {
+                await ApartmentService.AddApartmentAsync(apartmentEdit.Name, apartmentEdit.Address);
+                successMessage = "Apartment added successfully.";
+            }
+            catch (ArgumentException ae)
+            {
+                errorMessage = ae.Message;
+                return;
+            }
+            catch (InvalidOperationException ioe)
+            {
+                errorMessage = ioe.Message;
+                return;
+            }
         }
 
         apartmentEdit = new ApartmentDto();
@@ -92,8 +159,23 @@
     async Task DeleteApartmentAsync(int id)
     {
         if (id <= 0) return;
-        await ApartmentService.DeleteApartmentAsync(id);
-        await LoadApartmentsAsync();
+
+        ClearMessages();
+
+        try
+        {
+            await ApartmentService.DeleteApartmentAsync(id);
+            successMessage = "Apartment deleted successfully.";
+            await LoadApartmentsAsync();
+        }
+        catch (ArgumentException ae)
+        {
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
+        }
     }
 
     void EditApartment(ApartmentDto apt)
@@ -131,5 +213,11 @@
         {
             apartments = apartmentsList.AsQueryable();
         }
+    }
+
+    void ClearMessages()
+    {
+        errorMessage = null;
+        successMessage = null;
     }
 }

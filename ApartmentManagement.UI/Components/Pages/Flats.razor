@@ -105,23 +105,16 @@ else
 
     private async Task LoadFlats()
     {
-        try
-        {
-            errorMessage = null;
-            flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
+        errorMessage = null;
+        flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
     }
 
     private async Task AddFlat()
     {
+        errorMessage = null;
+
         try
         {
-            errorMessage = null;
-
             await FlatService.AddFlatAsync(flatNumber, floor, ApartmentId);
 
             flatNumber = string.Empty;
@@ -129,24 +122,32 @@ else
 
             await LoadFlats();
         }
-        catch (Exception ex)
+        catch (ArgumentException ae)
         {
-            errorMessage = ex.Message;
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
         }
     }
 
     private async Task DeleteFlat(int id)
     {
+        errorMessage = null;
+
         try
         {
-            errorMessage = null;
-
             await FlatService.DeleteFlatAsync(id);
             await LoadFlats();
         }
-        catch (Exception ex)
+        catch (ArgumentException ae)
         {
-            errorMessage = ex.Message;
+            errorMessage = ae.Message;
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
         }
     }
 }

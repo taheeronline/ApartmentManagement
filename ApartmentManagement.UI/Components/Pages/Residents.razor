@@ -8,6 +8,12 @@
 {
     <p>Loading residents...</p>
 }
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
 else if (!residents.Any())
 {
     <div class="alert alert-info">
@@ -68,10 +74,25 @@ else
 
 @code {
     private IReadOnlyList<ResidentDto>? residents;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadResidents();
+        try
+        {
+            errorMessage = null;
+            await LoadResidents();
+        }
+        catch (ArgumentException ae)
+        {
+            errorMessage = ae.Message;
+            residents = Array.Empty<ResidentDto>();
+        }
+        catch (InvalidOperationException ioe)
+        {
+            errorMessage = ioe.Message;
+            residents = Array.Empty<ResidentDto>();
+        }
     }
 
     private async Task LoadResidents()

@@ -6,10 +6,17 @@
 <h1 class="text-danger">Error.</h1>
 <h2 class="text-danger">An error occurred while processing your request.</h2>
 
+@if (!string.IsNullOrWhiteSpace(UserMessage))
+{
+    <div class="alert alert-warning">
+        @UserMessage
+    </div>
+}
+
 @if (ShowRequestId)
 {
     <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
+        <strong>Request / Error ID:</strong> <code>@RequestId</code>
     </p>
 }
 
@@ -31,6 +38,28 @@
     private string? RequestId { get; set; }
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-    protected override void OnInitialized() =>
-        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+    private string? ErrorId { get; set; }
+    private string? UserMessage { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Prefer explicit error id and message from global handler if present in query string
+        var qs = HttpContext?.Request?.Query;
+        if (qs != null)
+        {
+            if (qs.TryGetValue("errorId", out var id) && !string.IsNullOrWhiteSpace(id))
+            {
+                ErrorId = id;
+                RequestId = id;
+            }
+
+            if (qs.TryGetValue("message", out var msg) && !string.IsNullOrWhiteSpace(msg))
+            {
+                UserMessage = msg;
+            }
+        }
+
+        if (string.IsNullOrEmpty(RequestId))
+            RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+    }
 }

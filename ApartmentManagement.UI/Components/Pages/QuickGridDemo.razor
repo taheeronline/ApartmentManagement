@@ -8,6 +8,31 @@
 
 <PageTitle>Grid Demo</PageTitle>
 <h3>Grid Demo</h3>
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="ClearMessages"></button>
+    </div>
+}
+<style>
+    /* Fix table layout and prevent Name column from expanding. */
+    .table-fixed { table-layout: fixed; }
+
+    /* Target the second column (Name) — adjust width as needed. */
+    .table-fixed th:nth-child(2),
+    .table-fixed td:nth-child(2) {
+        max-width: 280px;
+        width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Ensure cell content uses ellipsis */
+    .table-fixed td div.cell-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
 <div class="container">
     <div class="row">
         <div class="card">
@@ -15,7 +40,7 @@
                 <EditForm Model="person" onsubmit="AddPerson">
                     <div class="hstack gap-2">
                         <label class="col-form-label">Name</label>
-                        <InputText class="form-control" @bind-Value="person.Name"/>
+                        <InputText class="form-control" @bind-Value="person.Name" maxlength="70" />
                         <label class="col-form-label">DoB</label>
                         <InputDate class="form-control" @bind-Value="person.DateOfBirth"/>
 
@@ -26,7 +51,7 @@
                 </EditForm>
             </div>
             <div class="card-body">
-                <QuickGrid Class="table table-striped" Items="people" Pagination="paginationState">
+                <QuickGrid Class="table table-striped table-fixed" Items="people" Pagination="paginationState">
                     <PropertyColumn Property="p => p.Id" Title="ID" Sortable="true" IsDefaultSortColumn />
                     <PropertyColumn Property="p => p.Name" Title="Name" Sortable="true" >
                         <ColumnOptions>
@@ -101,6 +126,10 @@
     {
         if (person.Name is null || person.DateOfBirth == default) return;
 
+        // Enforce maximum name length as a safety net
+        if (person.Name.Length > 70)
+            person.Name = person.Name[..70];
+
         if (person.Id > 0)
         {
             //var peopleList = people.ToList();
@@ -127,6 +156,13 @@
         people = peopleList.AsQueryable();
         person = new Person();
         ApplyNameFilter(nameFilter);
+    }
+
+    private string? errorMessage;
+
+    void ClearMessages()
+    {
+        errorMessage = null;
     }
 
     void DeletePerson(Person personToDelete)
