@@ -1,8 +1,18 @@
 ﻿@page "/flats/{ApartmentId:int}"
 @using ApartmentManagement.Application.DTOs
 @inject ApartmentManagement.Application.Services.FlatService FlatService
+@inject ApartmentManagement.Application.Services.ApartmentService ApartmentService
 
-<h3>List of Flats</h3>
+<h3>
+    @if (!string.IsNullOrWhiteSpace(apartmentName))
+    {
+        <span>Flats for @apartmentName</span>
+    }
+    else
+    {
+        <span>List of Flats</span>
+    }
+</h3>
 
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -92,6 +102,7 @@ else
     public int ApartmentId { get; set; }
 
     private IReadOnlyList<FlatDto>? flats;
+    private string? apartmentName;
 
     private string flatNumber = string.Empty;
     private int floor;
@@ -101,12 +112,27 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadFlats();
+        await LoadApartmentName();
     }
 
     private async Task LoadFlats()
     {
         errorMessage = null;
         flats = await FlatService.GetFlatsByApartmentAsync(ApartmentId);
+    }
+
+    private async Task LoadApartmentName()
+    {
+        try
+        {
+            var apartments = await ApartmentService.GetApartmentsAsync();
+            var apt = apartments.FirstOrDefault(a => a.Id == ApartmentId);
+            apartmentName = apt?.Name ?? string.Empty;
+        }
+        catch
+        {
+            apartmentName = string.Empty;
+        }
     }
 
     private async Task AddFlat()
